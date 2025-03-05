@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Endereço</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #fff3e0;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #ff5722;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            font-size: 16px;
+            display: block;
+            margin-bottom: 8px;
+            color: #ff5722;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ff5722;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #ff5722;
+            color: white;
+            padding: 12px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #e64a19;
+        }
+        .result {
+            margin-top: 30px;
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background-color: #ff5722;
+            color: white;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+        footer p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Pesquisa de Endereço</h1>
+        <div class="input-group">
+            <label for="cep">Digite o CEP:</label>
+            <input type="text" id="cep" placeholder="Digite o CEP" maxlength="9" onkeydown="verificarEnter(event)">
+        </div>
+        <button class="button" onclick="pesquisarEndereco()">Pesquisar</button>
+
+        <div id="result" class="result">
+            <h3>Resultado da Pesquisa</h3>
+            <div id="enderecos-sugeridos"></div>
+            <button class="button" id="copiar-btn" onclick="copiarEndereco()">Copiar Endereço</button>
+            <a id="google-maps-link" class="button" target="_blank" style="margin-top: 10px; display: none;">Ver no Google Maps</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Desenvolvido por Natanael Carvalho</p>
+    </footer>
+
+    <script>
+        // Função para pesquisar o endereço com base no CEP usando a API ViaCEP
+        function pesquisarEndereco() {
+            const cep = document.getElementById('cep').value.trim().replace('-', ''); // Remover o hífen do CEP
+            if (cep === "") {
+                alert("Por favor, insira um CEP.");
+                return;
+            }
+
+            // Verifica se o CEP tem 8 dígitos
+            if (cep.length !== 8) {
+                alert("CEP inválido! O CEP deve conter 8 dígitos.");
+                return;
+            }
+
+            // Realiza a requisição à API do ViaCEP
+            const url = `https://viacep.com.br/ws/${cep}/json/`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        document.getElementById('enderecos-sugeridos').innerHTML = '<p>CEP não encontrado.</p>';
+                        document.getElementById('result').style.display = 'block';
+                    } else {
+                        // Exibe o endereço
+                        const enderecoCompleto = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf} (CEP: ${data.cep})`;
+                        const resultadoHtml = `
+                            <p><strong>Endereço:</strong> ${data.logradouro}, ${data.bairro}</p>
+                            <p><strong>Cidade:</strong> ${data.localidade} - <strong>Estado:</strong> ${data.uf}</p>
+                            <p><strong>CEP:</strong> ${data.cep}</p>
+                        `;
+                        document.getElementById('enderecos-sugeridos').innerHTML = resultadoHtml;
+                        document.getElementById('copiar-btn').style.display = 'block';
+                        document.getElementById('google-maps-link').style.display = 'inline-block';
+                        document.getElementById('google-maps-link').href = `https://www.google.com/maps?q=${encodeURIComponent(enderecoCompleto)}`;
+                        document.getElementById('result').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro na requisição:", error);
+                    document.getElementById('enderecos-sugeridos').innerHTML = '<p>Erro ao buscar o CEP. Tente novamente.</p>';
+                    document.getElementById('result').style.display = 'block';
+                });
+        }
+
+        // Função para copiar o endereço completo para a área de transferência
+        function copiarEndereco() {
+            const enderecoCompleto = document.getElementById('enderecos-sugeridos').innerText;
+            navigator.clipboard.writeText(enderecoCompleto).then(function() {
+                alert('Endereço copiado para a área de transferência!');
+            }, function(err) {
+                alert('Erro ao copiar o endereço: ' + err);
+            });
+        }
+
+        // Função para verificar se a tecla pressionada foi "Enter"
+        function verificarEnter(event) {
+            if (event.key === 'Enter') {
+                pesquisarEndereco();
+            }
+        }
+    </script>
+
+</body>
+</html>
